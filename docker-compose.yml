@@ -1,0 +1,36 @@
+version: '3.9'
+services:
+  api:
+    container_name: atlantis-api
+    build: .
+    image: atlantis-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+    depends_on:
+      - database
+    external_links:
+      - database:db
+    environment:
+      DB_HOST: db
+      NODE_ENV: testing
+      PORT: 3000
+    command:
+      [
+        "bash",
+        "/app/scripts/wait-for-it.sh",
+        "db:5432",
+        "--",
+        "bash",
+        "/app/scripts/start.sh"
+      ]
+  database:
+    container_name: atlantis-db
+    image: postgres:13.4
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
