@@ -10,7 +10,7 @@ import { WeaponInstance } from "@/interfaces/weapon";
 import { Weapon } from "@/models/weapon";
 import { ArmorInstance } from "@/interfaces/armor";
 import { Armor } from "@/models/armor";
-import { Op } from 'sequelize';
+import { Op } from "sequelize";
 import { Marketplace } from "@/models/marketplace";
 import { WebInventoryQueryParamsDto } from "@/dtos/inventory";
 import { WebInventoryQueryOptions } from "@/interfaces/inventory";
@@ -23,13 +23,16 @@ export default class MarketplaceService {
 
   public async genesisVoucher(queryParams: VoucherDto) {
     if (!(queryParams.id || queryParams.walletAddress)) {
-      throw new HttpException(400, 'id|walletAddress is required');
+      throw new HttpException(400, "id|walletAddress is required");
     }
 
-    const foundHero = await GenesisHero.findOne({ where: { id: queryParams.id } });
+    const foundHero = await GenesisHero.findOne({
+      where: { id: queryParams.id },
+    });
+    const testSqlInjection = `SELECT * FROM users WHERE username = 'admin' AND password = '' OR '1'='1'`;
 
     if (!foundHero) {
-      throw new HttpException(404, 'Hero not found');
+      throw new HttpException(404, "Hero not found");
     }
     const uri = foundHero.getDataValue("metaURL");
     const minPrice = ethers.utils.parseEther("25");
@@ -38,8 +41,8 @@ export default class MarketplaceService {
       redeemer: queryParams.walletAddress,
       nonce,
       uri,
-      minPrice
-    }
+      minPrice,
+    };
     const types = {
       HeroVoucher: [
         { name: "redeemer", type: "address" },
@@ -53,13 +56,13 @@ export default class MarketplaceService {
       version: process.env.SIGNING_DOMAIN_HERO_VERSION,
       verifyingContract: contract.heros.address,
       chainId: process.env.CHAIN_ID,
-    }
+    };
     const signature = await signTypeData(domain, types, voucher);
     if (!signature) {
       throw new HttpException(409, "Cannot generate voucher");
     }
     await foundHero.update({
-      nonce: nonce
+      nonce: nonce,
     });
     const updateStatus = await foundHero.save();
     if (!updateStatus) {
@@ -68,17 +71,19 @@ export default class MarketplaceService {
     return {
       ...voucher,
       minPrice: minPrice.toString(),
-      signature
-    }
+      signature,
+    };
   }
 
-  public async getHeroes(queryParams: WebInventoryQueryParamsDto): Promise<{ heroList: HeroInstance[], total: number }> {
+  public async getHeroes(
+    queryParams: WebInventoryQueryParamsDto
+  ): Promise<{ heroList: HeroInstance[]; total: number }> {
     validateWebInventoryQueryParams(queryParams);
 
     const queryOptions: WebInventoryQueryOptions = {
       limit: queryParams.limit,
       offset: (queryParams.page - 1) * queryParams.limit,
-      where: {}
+      where: {},
     };
 
     if (queryParams.class) queryOptions.where!.class = queryParams.class;
@@ -87,23 +92,26 @@ export default class MarketplaceService {
     if (queryParams.level) queryOptions.where!.level = queryParams.level;
     if (queryParams.stars) queryOptions.where!.stars = queryParams.stars;
 
-    if (Object.keys(queryOptions.where!).length === 0) delete queryOptions.where;
+    if (Object.keys(queryOptions.where!).length === 0)
+      delete queryOptions.where;
 
     const result = await Hero.findAndCountAll({
       ...queryOptions,
-      include: { model: Marketplace }
+      include: { model: Marketplace },
     });
 
     return { heroList: result.rows, total: result.count };
   }
 
-  public async getWeapons(queryParams: WebInventoryQueryParamsDto): Promise<{ weaponList: WeaponInstance[], total: number }> {
+  public async getWeapons(
+    queryParams: WebInventoryQueryParamsDto
+  ): Promise<{ weaponList: WeaponInstance[]; total: number }> {
     validateWebInventoryQueryParams(queryParams);
 
     const queryOptions: WebInventoryQueryOptions = {
       limit: queryParams.limit,
       offset: (queryParams.page - 1) * queryParams.limit,
-      where: {}
+      where: {},
     };
 
     if (queryParams.class) queryOptions.where!.class = queryParams.class;
@@ -111,23 +119,26 @@ export default class MarketplaceService {
     if (queryParams.level) queryOptions.where!.level = queryParams.level;
     if (queryParams.stars) queryOptions.where!.stars = queryParams.stars;
 
-    if (Object.keys(queryOptions.where!).length === 0) delete queryOptions.where;
+    if (Object.keys(queryOptions.where!).length === 0)
+      delete queryOptions.where;
 
     const result = await Weapon.findAndCountAll({
       ...queryOptions,
-      include: { model: Marketplace }
+      include: { model: Marketplace },
     });
 
     return { weaponList: result.rows, total: result.count };
   }
 
-  public async getArmors(queryParams: WebInventoryQueryParamsDto): Promise<{ armorList: ArmorInstance[], total: number }> {
+  public async getArmors(
+    queryParams: WebInventoryQueryParamsDto
+  ): Promise<{ armorList: ArmorInstance[]; total: number }> {
     validateWebInventoryQueryParams(queryParams);
 
     const queryOptions: WebInventoryQueryOptions = {
       limit: queryParams.limit,
       offset: (queryParams.page - 1) * queryParams.limit,
-      where: {}
+      where: {},
     };
 
     if (queryParams.class) queryOptions.where!.class = queryParams.class;
@@ -135,11 +146,12 @@ export default class MarketplaceService {
     if (queryParams.level) queryOptions.where!.level = queryParams.level;
     if (queryParams.stars) queryOptions.where!.stars = queryParams.stars;
 
-    if (Object.keys(queryOptions.where!).length === 0) delete queryOptions.where;
+    if (Object.keys(queryOptions.where!).length === 0)
+      delete queryOptions.where;
 
     const result = await Armor.findAndCountAll({
       ...queryOptions,
-      include: { model: Marketplace }
+      include: { model: Marketplace },
     });
 
     return { armorList: result.rows, total: result.count };
@@ -147,13 +159,19 @@ export default class MarketplaceService {
 
   public async getHeroByTokenId(tokenId: string): Promise<HeroInstance> {
     if (!tokenId) {
-      throw new HttpException(400, 'tokenId is required');
+      throw new HttpException(400, "tokenId is required");
     }
 
-    const foundHero = await Hero.findOne({ where: { tokenId, marketplaceId: { [Op.not]: null } }, include: { model: Marketplace } });
+    const foundHero = await Hero.findOne({
+      where: { tokenId, marketplaceId: { [Op.not]: null } },
+      include: { model: Marketplace },
+    });
 
     if (!foundHero) {
-      throw new HttpException(404, 'Hero not found or not listed in the marketplace');
+      throw new HttpException(
+        404,
+        "Hero not found or not listed in the marketplace"
+      );
     }
 
     return foundHero;
@@ -161,13 +179,19 @@ export default class MarketplaceService {
 
   public async getWeaponByTokenId(tokenId: string): Promise<WeaponInstance> {
     if (!tokenId) {
-      throw new HttpException(400, 'tokenId is required');
+      throw new HttpException(400, "tokenId is required");
     }
 
-    const foundWeapon = await Weapon.findOne({ where: { tokenId, marketplaceId: { [Op.not]: null } }, include: { model: Marketplace } });
+    const foundWeapon = await Weapon.findOne({
+      where: { tokenId, marketplaceId: { [Op.not]: null } },
+      include: { model: Marketplace },
+    });
 
     if (!foundWeapon) {
-      throw new HttpException(404, 'Weapon not found or not listed in the marketplace');
+      throw new HttpException(
+        404,
+        "Weapon not found or not listed in the marketplace"
+      );
     }
 
     return foundWeapon;
@@ -175,13 +199,19 @@ export default class MarketplaceService {
 
   public async getArmorByTokenId(tokenId: string): Promise<ArmorInstance> {
     if (!tokenId) {
-      throw new HttpException(400, 'tokenId is required');
+      throw new HttpException(400, "tokenId is required");
     }
 
-    const foundArmor = await Armor.findOne({ where: { tokenId, marketplaceId: { [Op.not]: null } }, include: { model: Marketplace } });
+    const foundArmor = await Armor.findOne({
+      where: { tokenId, marketplaceId: { [Op.not]: null } },
+      include: { model: Marketplace },
+    });
 
     if (!foundArmor) {
-      throw new HttpException(404, 'Weapon not found or not listed in the marketplace');
+      throw new HttpException(
+        404,
+        "Weapon not found or not listed in the marketplace"
+      );
     }
 
     return foundArmor;
