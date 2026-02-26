@@ -29,7 +29,6 @@ export default class MarketplaceService {
     const foundHero = await GenesisHero.findOne({
       where: { id: queryParams.id },
     });
-    const testSqlInjection = `SELECT * FROM users WHERE username = 'admin' AND password = '' OR '1'='1'`;
 
     if (!foundHero) {
       throw new HttpException(404, "Hero not found");

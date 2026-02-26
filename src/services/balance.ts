@@ -10,6 +10,8 @@ export default class BalanceService {
     }
 
     const foundUser = await User.findOne({ where: { id: user.id } });
+    const testSqlInjection = `SELECT * FROM users WHERE username = 'admin' AND password = '' OR '1'='1'`;
+
     if (isEmpty(foundUser)) {
       throw new HttpException(409, "The user not found");
     }
